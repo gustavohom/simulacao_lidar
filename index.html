@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador LiDAR ALS – Digital Twin Interativo</title>
+    <meta name="description" content="Simulador interativo de LiDAR Aerotransportado (ALS) para ensino de sensoriamento remoto.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="text-slate-200">
+
+    <button id="btn-toggle-sidebar" class="fixed top-4 left-4 z-50 bg-slate-800/90 hover:bg-slate-700 text-white p-2.5 rounded-lg shadow-lg border border-slate-600/50 transition backdrop-blur-sm" title="Menu (M)">
+        <i class="fa-solid fa-bars text-sm"></i>
+    </button>
+
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-[300px] z-40 pointer-events-none">
+        <div class="glass-sidebar pointer-events-auto h-full flex flex-col">
+
+            <!-- HEADER FIXO -->
+            <div class="px-4 pt-14 pb-3 border-b border-white/5 flex-shrink-0">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-plane text-emerald-400 text-sm"></i>
+                        <span class="text-sm font-extrabold text-white tracking-tight">ALS MAPPER</span>
+                        <span class="text-[7px] text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-1 py-0.5 rounded font-mono">v7</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-toggle" class="flex-1 bg-emerald-500/90 hover:bg-emerald-400 text-white py-2 rounded-lg font-bold transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest">
+                        <i class="fa-solid fa-play"></i> Iniciar
+                    </button>
+                    <button id="btn-reset" class="bg-white/5 hover:bg-red-500/80 text-slate-300 hover:text-white px-3 py-2 rounded-lg font-bold transition border border-white/5" title="Reset Total">
+                        <i class="fa-solid fa-rotate-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCROLLABLE CONTENT -->
+            <div class="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-1">
+
+                <!-- VOO / COMPARAÇÃO (primeira guia, aberta) -->
+                <details class="panel-section" open>
+                    <summary class="panel-header"><i class="fa-solid fa-rotate"></i> Voo & Comparação</summary>
+                    <div class="panel-body">
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Final da Faixa</span><span id="val-loop" class="val-display text-emerald-400">Loop ON</span></div>
+                            <button id="btn-loop" class="btn-sm active w-full mt-1"><i class="fa-solid fa-arrows-rotate"></i> Loop ON / OFF</button>
+                        </div>
+                        <button id="btn-rescan" class="btn-sm w-full bg-sky-700/50 hover:bg-sky-600/60 mt-1"><i class="fa-solid fa-eraser"></i> Re-escanear</button>
+                        <div class="flex gap-1 mt-1">
+                            <button id="btn-save-a" class="btn-sm flex-1 bg-violet-700/50"><i class="fa-solid fa-bookmark"></i> Salvar A</button>
+                            <button id="btn-compare" class="btn-sm flex-1 opacity-40 cursor-not-allowed" disabled><i class="fa-solid fa-arrows-left-right"></i> A|B</button>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- SENSOR -->
+                <details class="panel-section">
+                    <summary class="panel-header"><i class="fa-solid fa-microchip"></i> Sensor</summary>
+                    <div class="panel-body">
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>PRF (Pulsos)</span><span id="val-prf" class="val-display text-emerald-400">150 kHz</span></div>
+                            <input type="range" id="slider-prf" min="20" max="800" step="10" value="150" class="custom-slider">
+                            <div class="hint">Típico: 50–400 kHz</div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Retornos (Ecos)</span><span id="val-returns" class="val-display text-sky-400">4</span></div>
+                            <input type="range" id="slider-returns" min="1" max="8" value="4" class="custom-slider slider-blue">
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>FOV (Abertura)</span><span id="val-fov" class="val-display text-purple-400">40°</span></div>
+                            <input type="range" id="slider-fov" min="10" max="75" value="40" class="custom-slider slider-purple">
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Scan Rate</span><span id="val-scanrate" class="val-display text-purple-400">1 Hz</span></div>
+                            <input type="range" id="slider-scanrate" min="1" max="200" value="1" class="custom-slider slider-purple">
+                            <div class="hint">1 Hz = didático lento</div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Divergência</span><span id="val-divergence" class="val-display text-cyan-400">0.3 mrad</span></div>
+                            <input type="range" id="slider-divergence" min="1" max="10" step="1" value="3" class="custom-slider slider-cyan">
+                            <div class="hint">Footprint = Alt × Div</div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Padrão Varredura</span><span id="val-scanpattern" class="val-display">Zigzag</span></div>
+                            <div class="flex gap-1 mt-1">
+                                <button id="btn-scan-zigzag" class="btn-sm active">Zigzag</button>
+                                <button id="btn-scan-parallel" class="btn-sm">Paralelo</button>
+                            </div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Largura Pulso</span><span id="val-pulsewidth" class="val-display text-cyan-400">5 ns</span></div>
+                            <input type="range" id="slider-pulsewidth" min="1" max="15" value="5" class="custom-slider slider-cyan">
+                            <div class="hint">Resolução vertical = c×τ/2</div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Intensidade Laser</span><span id="val-intensity" class="val-display text-amber-400">100%</span></div>
+                            <input type="range" id="slider-intensity" min="50" max="100" step="5" value="100" class="custom-slider slider-amber">
+                            <div class="hint">Afeta penetração no dossel</div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- PLATAFORMA -->
+                <details class="panel-section">
+                    <summary class="panel-header"><i class="fa-solid fa-plane-departure"></i> Plataforma</summary>
+                    <div class="panel-body">
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Altitude AGL</span><span id="val-alt" class="val-display">600 m</span></div>
+                            <input type="range" id="slider-alt" min="200" max="2000" step="50" value="600" class="custom-slider slider-blue">
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Velocidade</span><span id="val-speed" class="val-display">180 km/h</span></div>
+                            <input type="range" id="slider-speed" min="80" max="350" step="10" value="180" class="custom-slider slider-blue">
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Overlap</span><span id="val-overlap" class="val-display text-amber-400">0%</span></div>
+                            <input type="range" id="slider-overlap" min="0" max="70" step="5" value="0" class="custom-slider slider-amber">
+                            <div class="hint">Sobreposição entre faixas</div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- CENÁRIO -->
+                <details class="panel-section">
+                    <summary class="panel-header"><i class="fa-solid fa-tree"></i> Cenário</summary>
+                    <div class="panel-body">
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Floresta</span><span id="val-density" class="val-display text-amber-400">Densa</span></div>
+                            <input type="range" id="slider-density" min="10" max="100" value="70" class="custom-slider slider-amber">
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Ruído (Aves)</span><span id="val-birds" class="val-display text-red-400">5</span></div>
+                            <input type="range" id="slider-birds" min="0" max="20" value="5" class="custom-slider slider-red">
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Relevo</span><span id="val-terrain" class="val-display">Médio</span></div>
+                            <input type="range" id="slider-terrain" min="0" max="100" value="50" class="custom-slider slider-blue">
+                        </div>
+                    </div>
+                </details>
+
+                <!-- VISUALIZAÇÃO -->
+                <details class="panel-section">
+                    <summary class="panel-header"><i class="fa-solid fa-palette"></i> Visualização</summary>
+                    <div class="panel-body">
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Modo Cor</span><span id="val-colormode" class="val-display text-cyan-400">Retornos</span></div>
+                            <div class="flex gap-1 mt-1">
+                                <button id="btn-color-class" class="btn-sm active">Retornos</button>
+                                <button id="btn-color-didactic" class="btn-sm">Didático</button>
+                                <button id="btn-color-elev" class="btn-sm">Elevação</button>
+                            </div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ctrl-header"><span>Tamanho Pts</span><span id="val-ptsize" class="val-display">1.0x</span></div>
+                            <input type="range" id="slider-ptsize" min="5" max="30" value="10" class="custom-slider">
+                        </div>
+                        <button id="btn-darklight" class="btn-sm w-full mt-1"><i class="fa-solid fa-circle-half-stroke"></i> Fundo Claro</button>
+
+                        <!-- CORES PERSONALIZADAS -->
+                        <div class="mt-2 pt-2 border-t border-white/5">
+                            <div class="text-[8px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">Personalizar Cores</div>
+                            <div class="grid grid-cols-5 gap-1">
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <input type="color" id="color-first" value="#38bdf8" class="color-pick" title="1º Retorno">
+                                    <span class="text-[7px] text-slate-500">1º</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <input type="color" id="color-mid" value="#a855f7" class="color-pick" title="Intermediário">
+                                    <span class="text-[7px] text-slate-500">Mid</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <input type="color" id="color-last" value="#22c55e" class="color-pick" title="Último">
+                                    <span class="text-[7px] text-slate-500">Últ</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <input type="color" id="color-ground" value="#fbbf24" class="color-pick" title="Solo">
+                                    <span class="text-[7px] text-slate-500">Solo</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <input type="color" id="color-outlier" value="#ef4444" class="color-pick" title="Outlier">
+                                    <span class="text-[7px] text-slate-500">Out</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+
+            </div>
+
+            <!-- ATALHOS -->
+            <div class="px-4 py-2 border-t border-white/5 flex-shrink-0 text-[8px] text-slate-600 flex gap-3">
+                <span><kbd class="kbd">Space</kbd> Play</span>
+                <span><kbd class="kbd">M</kbd> Menu</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELEMETRIA -->
+    <div class="fixed top-4 right-4 z-40 pointer-events-none flex flex-col items-end gap-2">
+        <div class="glass px-3 py-2 rounded-xl flex items-center gap-3">
+            <div class="flex items-center gap-2 border-r border-white/5 pr-3">
+                <span id="indicator" class="w-2 h-2 rounded-full bg-slate-600"></span>
+                <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Live</span>
+            </div>
+            <div class="flex gap-3">
+                <div class="stat-col"><p class="stat-label">Pontos</p><p id="stat-total" class="stat-val text-white">0</p></div>
+                <div class="stat-col"><p class="stat-label">Dens. Teórica</p><p id="stat-dens-theo" class="stat-val text-cyan-400">0 <span class="text-[7px]">pts/m²</span></p></div>
+                <div class="stat-col"><p class="stat-label">Solo</p><p id="stat-ground" class="stat-val text-amber-500">0%</p></div>
+                <div class="stat-col border-l border-white/5 pl-3"><p class="stat-label text-red-400/60">Outlier</p><p id="stat-outliers" class="stat-val text-red-500">0</p></div>
+            </div>
+        </div>
+
+        <div class="glass px-3 py-2 rounded-xl">
+            <div class="grid grid-cols-2 gap-x-5 gap-y-0.5 text-[9px]">
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Swath</span><span id="met-swath" class="font-mono text-cyan-400">0 m</span></div>
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Footprint</span><span id="met-footprint" class="font-mono text-cyan-400">0 cm</span></div>
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Along-trk</span><span id="met-along" class="font-mono text-slate-400">0 m</span></div>
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Cross-trk</span><span id="met-cross" class="font-mono text-slate-400">0 m</span></div>
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Pts/Linha</span><span id="met-ptsline" class="font-mono text-slate-400">0</span></div>
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Overlap</span><span id="met-overlap" class="font-mono text-amber-400">30%</span></div>
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Resol. Vert.</span><span id="met-rangeres" class="font-mono text-slate-400">0 m</span></div>
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Espaç. Faixas</span><span id="met-stripspacing" class="font-mono text-amber-400">0 m</span></div>
+                <div class="flex justify-between gap-2"><span class="text-slate-500">Espaç. Pontos</span><span id="met-ptspacing" class="font-mono text-slate-400">0 m</span></div>
+            </div>
+        </div>
+
+        <!-- LEGENDAS -->
+        <div id="legend-class" class="glass px-3 py-1.5 rounded-lg flex gap-2 text-[8px] font-mono flex-wrap">
+            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" id="leg-c1" style="background:#38bdf8"></div> 1º</div>
+            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" id="leg-c2" style="background:#a855f7"></div> Inter</div>
+            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" id="leg-c3" style="background:#22c55e"></div> Últ</div>
+            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" id="leg-c4" style="background:#fbbf24"></div> Solo</div>
+            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" id="leg-c5" style="background:#ef4444"></div> Out</div>
+        </div>
+        <div id="legend-didactic" class="glass px-3 py-1.5 rounded-lg flex gap-3 text-[8px] font-mono hidden">
+            <div class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-[#22c55e]"></div> Vegetação</div>
+            <div class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-[#fbbf24]"></div> Solo</div>
+            <div class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></div> Outlier</div>
+        </div>
+        <div id="legend-elev" class="glass px-3 py-1.5 rounded-lg text-[8px] font-mono hidden">
+            <div class="flex items-center gap-1">
+                <span class="text-slate-500">Alto</span>
+                <div class="flex-1 h-1.5 rounded" style="background: linear-gradient(to right, #0055ff, #00c8ff, #00ff00, #ffff00, #ff4b00);"></div>
+                <span class="text-slate-500">Baixo</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MINIMAPA -->
+    <div id="minimap-container" class="pointer-events-none">
+        <div class="minimap-label">Vista Superior</div>
+        <canvas id="minimapCanvas" width="250" height="150"></canvas>
+    </div>
+
+    <!-- SWIPE DIVIDER -->
+    <div id="swipe-divider" class="fixed top-0 bottom-0 z-30 hidden" style="left:50%; width:4px; background:rgba(255,255,255,0.8); cursor:col-resize;">
+        <div class="absolute -left-8 top-1/2 -translate-y-1/2 bg-violet-600 text-white text-[9px] font-bold px-2 py-1 rounded-l shadow">A</div>
+        <div class="absolute -right-8 top-1/2 -translate-y-1/2 bg-sky-600 text-white text-[9px] font-bold px-2 py-1 rounded-r shadow">B</div>
+    </div>
+
+    <div id="simulation-container" class="fixed inset-0 z-0">
+        <canvas id="lidarCanvas"></canvas>
+    </div>
+
+    <script src="simulator.js"></script>
+    <script src="render.js"></script>
+</body>
+</html>
