@@ -17,7 +17,6 @@ A página permite o ajuste fino de diversos parâmetros para observar o comporta
 ### 1. Parâmetros de Voo
 * **Altitude:** Impacta a largura da faixa de varredura (*swath width*) e o tamanho do *footprint* do laser.
 * **Velocidade da Aeronave:** Influencia a densidade de pontos ao longo da linha de voo.
-* **Trajetória:** Observação do comportamento da aeronave e do retorno ao final das linhas.
 
 ### 2. Parâmetros do Sensor (LiDAR)
 * **Frequência de Pulso (PRF):** Determina a quantidade de pulsos emitidos por segundo (Hz).
@@ -25,12 +24,6 @@ A página permite o ajuste fino de diversos parâmetros para observar o comporta
 * **Ângulo de Varredura:** Define a amplitude lateral da coleta.
 
 ---
-
-## 🚀 Tecnologias Utilizadas
-
-* **React / TypeScript:** Para uma interface reativa e moderna.
-* **Visualização 3D:** Renderização para demonstração da dinâmica de pulsos e retornos.
-* **GitHub Pages:** Hospedagem do simulador.
 
 ## 📄 Licença
 
